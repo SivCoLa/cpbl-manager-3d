@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>中職總教頭 3D｜原型 0.2</title>
+<style>
+:root{--gold:#ffd45c;--panel:#081824e8;--line:#ffffff35}
+*{box-sizing:border-box}body{margin:0;background:#07131d;color:#fff;font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif}#scene{position:fixed;inset:0;z-index:0}canvas{display:block}
+#app{position:relative;z-index:2;min-height:100dvh;pointer-events:none;padding:12px;display:flex;flex-direction:column;gap:10px}
+header,.card,.toolbar,.modal{background:var(--panel);border:1px solid var(--line);border-radius:15px;backdrop-filter:blur(10px);box-shadow:0 8px 26px #0005}
+header{padding:11px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.logo{font-weight:1000;letter-spacing:.5px}.logo small{display:block;font-size:10px;color:#a9c2ce;font-weight:600;letter-spacing:1px}
+header .tag{font-size:11px;color:#14202a;background:var(--gold);padding:5px 8px;border-radius:20px;font-weight:900}
+main{flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:12px}
+.card{padding:13px;pointer-events:auto}.hidden{display:none!important}
+h1{font-size:25px;margin:3px 0 8px}h2{font-size:17px;margin:0 0 10px}p{color:#c2d3dc;font-size:13px;line-height:1.55;margin:6px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.team{border:1px solid var(--line);border-radius:12px;padding:12px;background:#ffffff0b;color:white;text-align:left;min-height:70px;font-weight:800}
+.team small{display:block;color:#bed0d8;font-size:11px;margin-top:4px;font-weight:500}
+.team.selected{outline:2px solid var(--gold);background:#ffd45c20}
+button{font:inherit;cursor:pointer}button:disabled{opacity:.4}
+.primary{border:0;background:linear-gradient(135deg,#ffe17c,#ff9c35);color:#2b1b05;font-weight:1000;border-radius:12px;padding:13px 16px;min-height:46px}
+.secondary{border:1px solid var(--line);background:#ffffff12;color:white;border-radius:11px;padding:10px 12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+.stat{background:#ffffff0c;border-radius:10px;padding:9px;text-align:center}.stat b{display:block;font-size:20px}.stat span{font-size:10px;color:#b6cbd5}
+.scoreboard{display:flex;justify-content:space-between;align-items:center;gap:6px}.scoreboard strong{font-size:22px}.scoreboard small{display:block;color:#b7cbd4;font-size:10px}
+#commentary{font-weight:900;text-align:center;font-size:clamp(18px,4vw,25px);text-shadow:0 2px 8px #000}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.controls button{pointer-events:auto;min-height:62px;border:1px solid #ffffff40;border-radius:13px;background:#0b2232ed;color:white;font-weight:900}
+.controls button em{display:block;font-size:10px;font-style:normal;color:#b9cbd4;font-weight:500;margin-top:3px}
+.controls .hot{background:linear-gradient(145deg,#ffe17c,#ff922c);color:#2c1b04;border:0}
+.controls .hot em{color:#56370d}
+#nav{display:flex;gap:7px;pointer-events:auto}#nav button{flex:1}
+.list{display:flex;flex-direction:column;gap:7px}.player{display:flex;align-items:center;justify-content:space-between;padding:9px;border-radius:10px;background:#ffffff0b;font-size:13px}
+.player small{display:block;color:#a9c0cb;font-size:10px}.player button{padding:7px 9px}
+#toast{position:fixed;z-index:4;left:50%;top:40%;transform:translate(-50%,-50%);font-size:clamp(28px,8vw,46px);font-weight:1000;color:var(--gold);text-shadow:0 3px 14px #000;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap}
+footer{font-size:10px;text-align:center;color:#91aab6;padding:2px}
+@media(min-width:760px){#app{max-width:900px;margin:auto;padding:22px} .grid{grid-template-columns:repeat(3,minmax(0,1fr))}.controls{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style></head>
+<body>
+<div id="scene"></div><div id="toast"></div>
+<div id="app">
+<header><div class="logo">中職總教頭 3D<small>CPBL MANAGER • PLAYABLE PROTOTYPE 0.2</small></div><div class="tag">測試版</div></header>
+<main>
+<section id="setup" class="card">
+<h1>建立你的職業球團</h1><p>選擇一支中華職棒球隊，接著挑戰三局制測試賽。你將親自操作打擊、投球與守備。</p>
+<h2>選擇主隊</h2><div class="grid" id="teams"></div>
+<div style="height:10px"></div><h2>選擇對手</h2><div class="grid" id="opponents"></div>
+<div style="height:12px"></div><button class="primary" style="width:100%" id="start" disabled>建立球團並進入主畫面</button>
+</section>
+<section id="hub" class="card hidden">
+<div class="row" style="justify-content:space-between"><div><div style="color:#b8cbd4;font-size:11px">球團總部</div><h1 id="clubName">我的球隊</h1></div><div class="stat"><span>球團資金</span><b id="cash">＄500</b></div></div>
+<div class="grid"><div class="stat"><span>球隊戰力</span><b id="rating">68</b></div><div class="stat"><span>訓練點數</span><b id="points">3</b></div><div class="stat"><span>賽季戰績</span><b id="record">0勝 0敗</b></div></div>
+<p>安排訓練提升球員能力，再進入球場親自帶隊比賽。</p>
+<div class="row"><button class="primary" id="toGame">開始比賽</button><button class="secondary" id="toRoster">球員與訓練</button></div>
+</section>
+<section id="roster" class="card hidden">
+<div class="row"><h2 style="flex:2">球員名單與訓練</h2><button class="secondary" id="backHub">返回總部</button></div>
+<p>消耗 1 點訓練點數，提升一名球員的能力值。此版本使用原創測試球員資料。</p>
+<div id="players" class="list"></div>
+</section>
+<section id="game" class="hidden">
+<div class="card">
+<div class="scoreboard"><div><small id="homeLabel">主隊</small><strong id="homeScore">0</strong></div><div style="text-align:center"><small id="inning">1局上</small><strong id="count">0好 0壞 0出局</strong></div><div style="text-align:right"><small id="awayLabel">客隊</small><strong id="awayScore">0</strong></div></div>
+</div>
+<div id="commentary">比賽即將開始！</div>
+<div class="card">
+<div class="row"><div class="stat"><span>壘上狀況</span><b id="bases">無人</b></div><div class="stat"><span>目前操作</span><b id="phaseLabel">打擊</b></div></div>
+<p id="instruction">球投過來時，抓準時機揮棒。</p>
+</div>
+<div class="controls" id="batControls">
+<button class="hot" id="swing">揮棒！<em>球接近本壘時點擊</em></button>
+<button id="take">選球<em>不揮棒，觀察好壞球</em></button>
+</div>
+<div class="controls hidden" id="pitchControls">
+<button id="fastball">直球<em>速度快</em></button><button id="curve">曲球<em>變化大</em></button><button class="hot" id="pitch">投球！<em>選球種後出手</em></button>
+</div>
+<div class="controls hidden" id="fieldControls">
+<button id="left">守左側<em>左邊滾地球</em></button><button id="center">守中間<em>中間飛球</em></button><button id="right">守右側<em>右邊強勁球</em></button><button class="hot" id="throw">傳一壘<em>完成守備</em></button>
+</div>
+<div class="row"><button class="secondary" id="leaveGame">結束測試賽</button><button class="secondary" id="nextInning" disabled>下一半局</button></div>
+</section>
+<section id="result" class="card hidden">
+<h1>比賽結束</h1><div class="scoreboard"><div><small id="resultHome">主隊</small><strong id="resultHS">0</strong></div><div style="font-size:14px">FINAL</div><div style="text-align:right"><small id="resultAway">客隊</small><strong id="resultAS">0</strong></div></div>
+<p id="resultText"></p><button class="primary" style="width:100%" id="returnHub">返回球團總部</button>
+</section>
+</main><nav id="nav" class="hidden"><button class="secondary" id="navHub">球團總部</button><button class="secondary" id="navRoster">球員名單</button><button class="secondary" id="navGame">比賽</button></nav>
+<footer>此為可遊玩的概念原型；球員能力、賽制與球隊經營資料皆可在後續版本擴充。</footer>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const teams=[['中信兄弟','#e6bd32'],['統一7-ELEVEn獅','#e9d52b'],['樂天桃猿','#bd263e'],['味全龍','#c92d35'],['富邦悍將','#2674ba'],['台鋼雄鷹','#168b83']];
+const players=[['陳冠宇','先發投手',74],['林子豪','內野手',72],['張志豪','外野手',78],['王威晨','內野手',76],['陳傑憲','外野手',82],['高宇杰','捕手',70],['江坤宇','游擊手',80],['許基宏','一壘手',77],['岳東華','工具人',73]];
+let own=-1,opp=-1,cash=500,points=3,wins=0,losses=0,roster=players.map(x=>[...x]),home=0,away=0,inning=1,half='上',outs=0,balls=0,strikes=0,bases=[false,false,false],phase='setup',pitchType='直球',pitchClock=0,pitchResult=null,fieldPick='',pendingRun=0,halfEnded=false;
+const $=id=>document.getElementById(id);
+function panel(id){['setup','hub','roster','game','result'].forEach(x=>$(x).classList.toggle('hidden',x!==id));$('nav').classList.toggle('hidden',id==='setup'||id==='result')}
+function makeTeamButtons(){teams.forEach((t,i)=>{let b=document.createElement('button');b.className='team';b.style.borderLeft='5px solid '+t[1];b.innerHTML=t[0]+'<small>中華職棒一軍</small>';b.onclick=()=>{own=i;[...$('teams').children].forEach((x,j)=>x.classList.toggle('selected',j===i));updateOpp()};$('teams').append(b)})}
+function updateOpp(){ $('opponents').innerHTML='';teams.forEach((t,i)=>{if(i===own)return;let b=document.createElement('button');b.className='team';b.style.borderLeft='5px solid '+t[1];b.innerHTML=t[0]+'<small>本場對手</small>';b.onclick=()=>{opp=i;[...$('opponents').children].forEach(x=>x.classList.remove('selected'));b.classList.add('selected');$('start').disabled=false};$('opponents').append(b)})}
+makeTeamButtons();
+$('start').onclick=()=>{ $('clubName').textContent=teams[own][0];$('cash').textContent='＄'+cash;$('rating').textContent=avg();$('points').textContent=points;updateRecord();panel('hub');$('nav').classList.remove('hidden')};
+function avg(){return Math.round(roster.reduce((a,p)=>a+p[2],0)/roster.length)}
+function updateRecord(){$('record').textContent=wins+'勝 '+losses+'敗'}
+function rosterUI(){$('players').innerHTML='';roster.forEach((p,i)=>{let d=document.createElement('div');d.className='player';d.innerHTML='<div><b>'+p[0]+'</b><small>'+p[1]+' · 能力 '+p[2]+'</small></div><button class="secondary" '+(points?'':'disabled')+'>訓練 +1</button>';d.querySelector('button').onclick=()=>{if(points){points--;roster[i][2]=Math.min(99,roster[i][2]+1);$('points').textContent=points;$('rating').textContent=avg();rosterUI()}};$('players').append(d)})}
+$('toRoster').onclick=()=>{rosterUI();panel('roster')};$('backHub').onclick=()=>panel('hub');$('navHub').onclick=()=>panel('hub');$('navRoster').onclick=()=>{rosterUI();panel('roster')};$('navGame').onclick=()=>{if(phase!=='setup')panel('game')};
+$('toGame').onclick=()=>startGame();
+function startGame(){home=away=0;inning=1;half='上';outs=balls=strikes=0;bases=[false,false,false];halfEnded=false;panel('game');$('homeLabel').textContent=teams[own][0];$('awayLabel').textContent=teams[opp][0];$('homeScore').textContent=home;$('awayScore').textContent=away;setBatting()}
+function countText(){$('count').textContent=strikes+'好 '+balls+'壞 '+outs+'出局';$('bases').textContent=bases.map((b,i)=>b?['一壘','二壘','三壘'][i]:null).filter(Boolean).join('、')||'無人';$('inning').textContent=inning+'局'+half}
+function setBatting(){phase='bat';pitchClock=0;pitchResult=null;$('phaseLabel').textContent='打擊';$('batControls').classList.remove('hidden');$('pitchControls').classList.add('hidden');$('fieldControls').classList.add('hidden');$('instruction').textContent='投手即將出手。球接近本壘時按「揮棒」，也可以選球。';$('commentary').textContent=half==='上'?'輪到你進攻！':'下半局進攻開始！';countText();setTimeout(()=>{if(phase==='bat')pitchClock=0.01},350)}
+function pitchArrives(){if(phase!=='bat')return;pitchClock=1;pitchResult=Math.random()<.72?'好球':'壞球';}
+$('swing').onclick=()=>{if(phase!=='bat')return;if(pitchClock<.5){strikes++;say('太早揮棒！');}else{let timing=Math.abs(pitchClock-.82);if(timing<.18){let hit=Math.random();if(hit>.83){pendingRun=2;say('打得又高又遠！長打機會！')}else if(hit>.45){pendingRun=1;say('穿越內野！安打！')}else{pendingRun=0;say('擊出界外球！');strikes=Math.min(2,strikes+1)}if(hit>.45){advanceRunners(pendingRun);endAtBat()}else{pitchClock=0;countText();return}}else{strikes++;say('揮棒落空！')}}countText();if(strikes>=3){outs++;strikes=0;endAtBat()}else{pitchClock=0;setTimeout(()=>{if(phase==='bat')pitchArrives()},500)}};
+$('take').onclick=()=>{if(phase!=='bat')return;if(pitchClock<.5){say('還沒投球！');return}if(pitchResult==='好球'){strikes++;say('看著好球進來！')}else{balls++;say('選到壞球！')}if(balls>=4){advanceRunners(1);say('保送上壘！');endAtBat()}else if(strikes>=3){outs++;strikes=0;say('三振！');endAtBat()}else{countText();pitchClock=0;setTimeout(()=>{if(phase==='bat')pitchArrives()},500)}};
+function advanceRunners(n){for(let j=0;j<n;j++){if(bases[2]){if(half==='上')home++;else away++}bases[2]=bases[1];bases[1]=bases[0];bases[0]=true} $('homeScore').textContent=home;$('awayScore').textContent=away}
+function say(t){$('commentary').textContent=t;countText()}
+function endAtBat(){countText();if(outs>=3){halfEnded=true;$('instruction').textContent='三人出局，準備交換攻守。';$('nextInning').disabled=false;phase='break';$('batControls').classList.add('hidden');}else{setTimeout(()=>{if(phase==='bat'||phase==='break')return;setBatting()},700);phase='transition';setTimeout(()=>{if(phase==='transition')setBatting()},700)}}
+$('nextInning').onclick=()=>{if(!halfEnded)return;halfEnded=false;outs=balls=strikes=0;bases=[false,false,false];if(half==='上'){half='下';setPitching()}else{half='上';inning++;if(inning>3){finishGame();return}setBatting()}$('nextInning').disabled=true;countText()};
+function setPitching(){phase='pitch';$('phaseLabel').textContent='投球';$('batControls').classList.add('hidden');$('pitchControls').classList.remove('hidden');$('fieldControls').classList.add('hidden');$('instruction').textContent='選擇球種後按投球。對手可能擊出球，接著由你守備。';say('換你站上投手丘！')}
+$('fastball').onclick=()=>{pitchType='直球';say('已選擇直球')};$('curve').onclick=()=>{pitchType='曲球';say('已選擇曲球')};
+$('pitch').onclick=()=>{if(phase!=='pitch')return;phase='field';$('pitchControls').classList.add('hidden');$('fieldControls').classList.remove('hidden');$('phaseLabel').textContent='守備';fieldPick='';let hit=Math.random();if(hit<.35){outs++;say(pitchType+'！對手揮棒落空，三振！');finishField(true)}else{say(pitchType+'被打出去！判斷落點並選擇守備位置。');$('instruction').textContent='選擇球的落點，再按「傳一壘」完成守備。';}}
+;['left','center','right'].forEach(id=>$(id).onclick=()=>{fieldPick=id;say(({left:'已移動左側守備',center:'已移動中間守備',right:'已移動右側守備'})[id])});
+$('throw').onclick=()=>{if(phase!=='field')return;let correct=(fieldPick==='center'&&Math.random()<.7)||Math.random()<.22;if(correct){outs++;say('漂亮接殺！出局！')}else{if(half==='上')away++;else home++;$('homeScore').textContent=home;$('awayScore').textContent=away;say('對手擊出安打，失分！')}finishField()};
+function finishField(auto){$('fieldControls').classList.add('hidden');if(outs>=3){halfEnded=true;$('nextInning').disabled=false;$('instruction').textContent='三人出局，攻守交換。';phase='break'}else{setTimeout(()=>{if(phase==='field')setPitching()},600);phase='transition';setTimeout(()=>{if(phase==='transition')setPitching()},650)}countText()}
+function finishGame(){phase='result';let win=home>away;if(win){wins++;cash+=150;points++;}else if(home<away){losses++;cash+=60;}else cash+=100;$('resultHome').textContent=teams[own][0];$('resultAway').textContent=teams[opp][0];$('resultHS').textContent=home;$('resultAS').textContent=away;$('resultText').textContent=(win?'恭喜獲勝！':home===away?'雙方平手。':'再接再厲！')+' 本場獎金已加入球團資金，勝利可獲得訓練點數。';panel('result')}
+$('leaveGame').onclick=()=>finishGame();$('returnHub').onclick=()=>{ $('cash').textContent='＄'+cash;$('points').textContent=points;$('rating').textContent=avg();updateRecord();panel('hub')};
+// Three.js stadium scene
+const root=document.getElementById('scene'),scene=new THREE.Scene();scene.background=new THREE.Color(0x80bde0);scene.fog=new THREE.Fog(0x80bde0,28,75);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,120);camera.position.set(0,12,22);camera.lookAt(0,1,-5);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;root.append(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x526d45,2));let sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(-9,18,12);sun.castShadow=true;scene.add(sun);
+const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});
+function cube(w,h,d,c,x,y,z){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+cube(100,.4,100,0x318349,0,-.3,-20);
+let infield=new THREE.Mesh(new THREE.CircleGeometry(9,4),material(0xb98250));infield.rotation.x=-Math.PI/2;infield.rotation.z=Math.PI/4;infield.position.set(0,-.06,-7);scene.add(infield);
+for(let x=-25;x<=25;x+=1.2)cube(.08,2,.1,0x324b5a,x,1,-32);
+for(let side of [-1,1])for(let r=0;r<5;r++)cube(7,.35,33,0x425d70,side*(17+r*.6),1+r*.42,-13);
+cube(1,.4,1,0xffffff,0,.1,.5);
+let mound=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.5,.25,32),material(0xb98250));mound.position.set(0,.05,-13);scene.add(mound);
+let batter=new THREE.Group();batter.position.set(1.6,0,1.5);scene.add(batter);
+function limb(g,a,b,r,c){let v=new THREE.Vector3().subVectors(b,a),o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,v.length(),10),material(c));o.position.copy(a).add(b).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());g.add(o);return o}
+let body=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.9,4,8),material(0xe8edf0));body.position.y=1.5;batter.add(body);
+let head=new THREE.Mesh(new THREE.SphereGeometry(.27,16,12),material(0xd99d78));head.position.y=2.3;batter.add(head);
+limb(batter,new THREE.Vector3(-.2,1.2,0),new THREE.Vector3(-.3,.1,0),.13,0x26384a);limb(batter,new THREE.Vector3(.2,1.2,0),new THREE.Vector3(.35,.1,0),.13,0x26384a);
+let bat=new THREE.Mesh(new THREE.CylinderGeometry(.045,.08,1.7,12),material(0xb9823f));bat.position.set(.6,2,.3);bat.rotation.z=-.5;batter.add(bat);
+let pitcher=new THREE.Group();pitcher.position.set(0,0,-14);scene.add(pitcher);
+let pb=new THREE.Mesh(new THREE.CapsuleGeometry(.38,.85,4,8),material(0xc63a3a));pb.position.y=1.5;pitcher.add(pb);
+let ph=new THREE.Mesh(new THREE.SphereGeometry(.25,16,12),material(0xd99d78));ph.position.y=2.3;pitcher.add(ph);
+let ball=new THREE.Mesh(new THREE.SphereGeometry(.16,18,14),material(0xffffff));ball.position.set(0,1.7,-8);scene.add(ball);
+let clock=new THREE.Clock();function render(){requestAnimationFrame(render);let t=clock.getElapsedTime();bat.rotation.z=-.5+((phase==='bat'&&pitchClock>.7&&pitchClock<.95)?Math.sin(t*28)*.12:0);ball.position.x=Math.sin(t*1.1)*.2;renderer.render(scene,camera)}render();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+setInterval(()=>{if(phase==='bat'&&pitchClock<1)pitchClock+=.035},70);
+</script></body></html>
